@@ -9,13 +9,13 @@ df = spark.read.option("inferSchema", True).option("header", True).csv("owid-cov
 """
 -------------------------------------------
 Задание #1
-Выберите 15 стран с наибольшим процентом переболевших на 31 марта (в выходящем датасете необходимы колонки: iso_code, страна, процент переболевших)
+Выберите 15 стран с наибольшим процентом переболевших на 31 марта 2021г (в выходящем датасете необходимы колонки: iso_code, страна, процент переболевших)
 """
 print("============")
 print("task 1")
 
-#фильтруем по дате, выбираем нужные колонки, считаем процент, сортируем процент по убыванию, ограничиваемся 15 записями, пишем в task_1.csv
-df.where(to_date(col('date')) == '2020-03-31').select("iso_code", "location", (round(col("total_cases") *100 / col("population"), 2)).alias("percent")).orderBy(col("percent").desc()).limit(15).coalesce(1).write.option("header", True).csv("task_1.csv")
+#фильтруем по дате, оста выбираем нужные колонки, считаем процент, сортируем процент по убыванию, ограничиваемся 15 записями, пишем в task_1.csv
+df.where(to_date(col('date')) == '2021-03-31').where(col("continent").isNotNull()).select("iso_code", "location", (round(col("total_cases") *100 / col("population"), 2)).alias("percent")).orderBy(col("percent").desc()).limit(15).coalesce(1).write.option("header", True).csv("task_1.csv")
 
 """
 -------------------------------------------
@@ -28,7 +28,7 @@ print("task 2")
 
 # выбираем нужные колонки, фильтруем по диапазону дат, для каждой из стран ранжируем по кол-ву новых случаев сортированных по убыванию, оставляем строки только с максимальным значением новых случаев для каждой из стран, 
 # сортируем по убыванию, ограничиваемся 10 записями, пишем в task_2.csv 
-df.select(to_date(col("date")).alias("date"), "location", "new_cases").where((col("date") >= '2021-03-24') & (col("date") <= '2021-03-31')).withColumn("row", row_number().over(Window.partitionBy("location").orderBy(col("new_cases").desc()))).where(col("row") == 1).drop("row").orderBy(col("new_cases").desc()).limit(10).coalesce(1).write.option("header", True).csv("task_2.csv")
+df.select(to_date(col("date")).alias("date"), "location", "new_cases", "continent").where(col("continent").isNotNull()).where((col("date") >= '2021-03-24') & (col("date") <= '2021-03-31')).withColumn("row", row_number().over(Window.partitionBy("location").orderBy(col("new_cases").desc()))).where(col("row") == 1).drop("row","continent").orderBy(col("new_cases").desc()).limit(10).coalesce(1).write.option("header", True).csv("task_2.csv")
 
 """
 -------------------------------------------
